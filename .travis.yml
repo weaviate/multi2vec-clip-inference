@@ -1,0 +1,51 @@
+language: python
+python: 3.9
+env:
+  global:
+  - LOCAL_REPO: multi2vec-clip
+  - REMOTE_REPO: semitechnologies/multi2vec-clip
+  - secure: nY4u4wSYDuL68meqpBNnpI3WQduLK6k+VGB1rzZ1Oej4KjBaIGgZ8TioQtHHCgs6t1X0nlCOXnh4AncCH7r7VQULAw19BFYu6ZWWnNvLt828594G2/6iZyojukLbsVEbCpxOpDZMbGk2acvzbDgUCIcxUZngj5F+TGjpRMuM8UjvScRHUTYr6EzsF99Kz3cY25XruJXi7W/Ycbq6OL96CbOMsfVjg3URcFMp1akU4qUxJ0VEwiAtd1jVepJuF83aAYc5SV9B8tj9wZp//NU5An40JGo0SklGoB+peO/S8RuV9eTf1srV5IRObGRJe5CqwgcWWCx/HGF4kiP80U6RA7Aw9y5Hh1s6Vx+t2xFs6HiIyeWguEDlh8DlC1BNu/gyT2DdLqs0mGIeGn6RgkwCpSvdBvQhYKA+jolrmk0V3Exn9Wiuz/ebFzYLUO0ngNB/cXcNSOMq3Xb2V/16XZ/4HUHEuuSDryNkGgJYPazCRCGk2Bb4eO1jA3acAXdV4qwLnhrTyw7duBo71SYIYkbxXlDB4S4wc7iIjIEY568RoX2oexU8+c46z0DfL/VEMW4vf0yXj5YCy/OKEBEriKnt4Z4fOFpmFuMTGBce557ZIHi7KvL+IBAe/PlfWDnc1FXOTXaG2BLccBzMLEXe6dY3DAMEb+grI70jYw3Va2bapWQ=
+  - secure: G8Svi3OeBqao4C6UY7KPva6uyVtoX3LBioMQO3kQOMAS3ErBL9BNR8fIf2VWDsnm0ruDTAHtIfGFzVTFpU6NcyEFSKZJ8dtu0S8+mlDJeds3UQqSB+SBepmyosc+iA+l77af0J63F0pjwzt9FV37y64THS9baom4QASvUxhsSihA1wPrZo1p6xO2Pf2oeDp+jzRhKkeOxlIVuzr3Ga9+U+wWRNsqE/SuydpTWzYV2rVvg8Y96osFD/fOUR9v/qBgSJda5qdOpzW47fbMZUUuGWLY+jDG2u0WN6uDPwMWE/S8BKbzCEZLb26ylxZKxxioZJINh6cgB5tPSYjjRXf+NIDURskAqT2KgFtQuRe9DpQhT/yhc7+S2vVixNhSLFuVM2m5B3QC3eqS1Iomf8A7K5APCDj6KqE6bPMSC9nbAUYFnplk0mtZfM9FdLO8PcEhELWOXJel1FznKCa4xoTeSbQoJtSIC4yJoL6X2mkH4bBCAC9ooGRA2KhqxGUfXixYZTs8wiBt5ye/EETLfuk5JXskmCoK6cPi3h/7YtgHxU2DjA2azqxsWCWMC5kqs2YqvYNKzQdxK8LwEu3RQjOE8sptobKXxxkyW349aMI48rjuOFKqH/Ab7LJw2EpFOeEuBikwgs/rnz09Fc/5LdciorFAaREPtEnCAsIWIei3o/I=
+install: echo skipping default travis install script
+jobs:
+  include:
+    # always run test, etc. for this model
+    - env:
+        MODEL_NAME: sentence-transformers/clip-ViT-B-32-multilingual-v1
+      stage: buildanddeploy
+
+    - name: Build the base for custom images
+      script: GIT_BRANCH=$TRAVIS_BRANCH GIT_TAG=$TRAVIS_TAG GIT_PULL_REQUEST=$TRAVIS_PULL_REQUEST cicd/build_custom_base.sh
+      stage: postbuild
+
+script:
+
+- cicd/build.sh || travis_terminate 1
+
+- cicd/test.sh || travis_terminate 1
+
+- |-
+  # Push docker image
+  GIT_BRANCH=$TRAVIS_BRANCH \
+  GIT_TAG=$TRAVIS_TAG \
+  GIT_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
+  travis_wait 90 cicd/docker_push.sh || travis_terminate 1
+
+before_install: 
+  # install a newer docker version which supports buildx
+  - sudo rm -rf /var/lib/apt/lists/*
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
+  - sudo apt-get update
+  - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+  - mkdir -vp ~/.docker/cli-plugins/
+  - curl --silent -L "https://github.com/docker/buildx/releases/download/v0.3.0/buildx-v0.3.0.linux-amd64" > ~/.docker/cli-plugins/docker-buildx
+  - chmod a+x ~/.docker/cli-plugins/docker-buildx
+
+before_script:
+  # login to docker at the very beginning, so we don't run into rate-limiting
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+
+# currently the latest available - so we can install the latest docker
+dist: bionic
