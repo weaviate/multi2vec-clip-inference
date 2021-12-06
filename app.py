@@ -18,7 +18,7 @@ else:
   print("[INFO] running on CPU")
 
 clip = Clip()
-meta_config = Meta('./models/model')
+meta_config = Meta('./models/clip', './models/text')
 
 @app.get("/.well-known/live", response_class=Response)
 @app.get("/.well-known/ready", response_class=Response)

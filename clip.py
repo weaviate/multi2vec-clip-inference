@@ -21,8 +21,8 @@ class Clip:
   text_model: SentenceTransformer
 
   def __init__(self):
-    self.img_model = SentenceTransformer('clip-ViT-B-32')
-    self.text_model = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1')
+    self.img_model = SentenceTransformer('./models/clip')
+    self.text_model = SentenceTransformer('./models/text')
 
   def vectorize(self, payload: ClipInput):
     try:

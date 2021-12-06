@@ -1,12 +1,15 @@
 from transformers import CLIPConfig
+from transformers import AutoConfig
 
 class Meta:
-  config: CLIPConfig
+  clip_config: CLIPConfig
 
-  def __init__(self, model_path):
-    self.config = CLIPConfig.from_pretrained(model_path)
+  def __init__(self, clip_model_path, text_model_path):
+    self.clip_config = CLIPConfig.from_pretrained(clip_model_path + '/0_CLIPModel')
+    self.text_config = AutoConfig.from_pretrained(text_model_path)
 
   def get(self):
     return {
-      'model': self.config.to_dict()
+      'clip_model': self.clip_config.to_dict(),
+      'text_model': self.text_config.to_dict(),
     }

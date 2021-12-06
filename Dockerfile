@@ -9,7 +9,8 @@ ENV PATH="$PATH:/root/.cargo/bin"
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
-ARG MODEL_NAME
+ARG TEXT_MODEL_NAME
+ARG CLIP_MODEL_NAME
 COPY download.py .
 RUN ./download.py
 
