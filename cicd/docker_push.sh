@@ -14,8 +14,9 @@ set -e pipefail
 git_hash=
 pr=
 remote_repo=${REMOTE_REPO?Variable REMOTE_REPO is required}
-model_name=${MODEL_NAME?Variable MODEL_NAME is required}
-original_model_name=$model_name
+clip_model_name=${CLIP_MODEL_NAME?Variable CLIP_MODEL_NAME is required}
+text_model_name=${TEXT_MODEL_NAME?Variable TEXT_MODEL_NAME is required}
+model_tag_name=${MODEL_TAG_NAME?Variable MODEL_TAG_NAME is required}
 docker_username=${DOCKER_USERNAME?Variable DOCKER_USERNAME is required}
 docker_password=${DOCKER_PASSWORD?Variable DOCKER_PASSWORD is required}
 
@@ -29,13 +30,6 @@ function main() {
 }
 
 function init() {
-  if [ ! -z "$MODEL_TAG_NAME" ]; then
-    # a model tag name was specified to overwrite the model name. This is the
-    # case, for example, when the original model name contains characters we
-    # can't use in the docker tag
-    model_name="$MODEL_TAG_NAME"
-  fi
-
   git_hash="$(git rev-parse HEAD | head -c 7)"
   pr=false
   if [ ! -z "$GIT_PULL_REQUEST" ]; then
@@ -53,9 +47,10 @@ function push_main() {
   if [ "$GIT_BRANCH" == "main" ] && [ "$pr" == "false" ]; then
     # The ones that are always pushed
 
-    tag="$remote_repo:$model_name-$git_hash"
+    tag="$remote_repo:$model_tag_name-$git_hash"
     docker buildx build --platform=linux/arm64,linux/amd64 \
-      --build-arg "MODEL_NAME=$original_model_name" \
+      --build-arg "TEXT_MODEL_NAME=$text_model_name" \
+      --build-arg "CLIP_MODEL_NAME=$clip_model_name" \
       --push \
       --tag "$tag" .
   fi
@@ -63,13 +58,14 @@ function push_main() {
 
 function push_tag() {
   if [ ! -z "$GIT_TAG" ]; then
-    tag_git="$remote_repo:$model_name-$GIT_TAG"
-    tag_latest="$remote_repo:$model_name-latest"
-    tag="$remote_repo:$model_name"
+    tag_git="$remote_repo:$model_tag_name-$GIT_TAG"
+    tag_latest="$remote_repo:$model_tag_name-latest"
+    tag="$remote_repo:$model_tag_name"
 
     echo "Tag & Push $tag, $tag_latest, $tag_git"
     docker buildx build --platform=linux/arm64,linux/amd64 \
-      --build-arg "MODEL_NAME=$original_model_name" \
+      --build-arg "TEXT_MODEL_NAME=$text_model_name" \
+      --build-arg "CLIP_MODEL_NAME=$clip_model_name" \
       --push \
       --tag "$tag_git" \
       --tag "$tag_latest" \
