@@ -16,5 +16,5 @@ LOCAL_REPO="multi2vec-clip" \
 ## Run tests
 
 ```
-LOCAL_REPO="mult2vec-clip" ./cicd/test.sh
+LOCAL_REPO="multi2vec-clip" ./cicd/test.sh
 ```

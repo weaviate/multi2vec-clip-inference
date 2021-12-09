@@ -4,6 +4,7 @@ from PIL import Image
 import requests
 import base64, os
 import uuid
+import io
 
 class ClipInput(BaseModel):
   texts: list = []
@@ -44,15 +45,11 @@ class Clip:
 
   def vectorizeImages(self, images):
     try:
-      filepaths = [self.saveImage(str(uuid.uuid1()), image) for image in images]
-      imageFiles = [self.loadImage(filepath) for filepath in filepaths]
+      imageFiles = [self.parseImage(image) for image in images]
       return self.img_model.encode(imageFiles)
     except (RuntimeError, TypeError, NameError, Exception) as e:
       print('vectorize images error:', e)
       raise e
-    finally:
-      for filepath in filepaths:
-        self.removeFile(filepath)
 
   def vectorizeTexts(self, texts):
     try:
@@ -61,23 +58,17 @@ class Clip:
       print('vectorize texts error:', e)
       raise e
 
-  def loadImage(self, url_or_path):
-    if url_or_path.startswith("http://") or url_or_path.startswith("https://"):
-      return Image.open(requests.get(url_or_path, stream=True).raw)
-    else:
-      return Image.open(url_or_path)
+  # parseImage decodes the base64 and parses the image bytes into a
+  # PIL.Image. If the image is not in RGB mode, e.g. for PNGs using a palette,
+  # it will be converted to RGB. This makes sure that they work with
+  # SentenceTransformers/Huggingface Transformers which seems to require a (3,
+  # height, width) tensor
+  def parseImage(self, base64_encoded_image_string):
+    img = None
+    image_bytes = base64.b64decode(base64_encoded_image_string)
+    img = Image.open(io.BytesIO(image_bytes))
 
-  def saveImage(self, id: str, image: str):
-    try:
-      filepath = id
-      file_content = base64.b64decode(image)
-      with open(filepath, "wb") as f:
-        f.write(file_content)
-      return filepath
-    except Exception as e:
-      print(str(e))
-      return ""
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
 
-  def removeFile(self, filepath: str):
-    if os.path.exists(filepath):
-      os.remove(filepath)
+    return img
