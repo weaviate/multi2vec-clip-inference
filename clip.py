@@ -64,7 +64,6 @@ class Clip:
   # SentenceTransformers/Huggingface Transformers which seems to require a (3,
   # height, width) tensor
   def parseImage(self, base64_encoded_image_string):
-    img = None
     image_bytes = base64.b64decode(base64_encoded_image_string)
     img = Image.open(io.BytesIO(image_bytes))
 
