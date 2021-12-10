@@ -12,6 +12,11 @@ jobs:
     # always run test, etc. for this model
     - env:
         CLIP_MODEL_NAME: clip-ViT-B-32
+        TEXT_MODEL_NAME: clip-ViT-B-32
+        MODEL_TAG_NAME: sentence-transformers-clip-ViT-B-32
+      stage: buildanddeploy
+    - env:
+        CLIP_MODEL_NAME: clip-ViT-B-32
         TEXT_MODEL_NAME: sentence-transformers/clip-ViT-B-32-multilingual-v1
         MODEL_TAG_NAME: sentence-transformers-clip-ViT-B-32-multilingual-v1
       stage: buildanddeploy
