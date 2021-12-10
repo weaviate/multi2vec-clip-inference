@@ -21,9 +21,12 @@ class Clip:
   img_model: SentenceTransformer
   text_model: SentenceTransformer
 
-  def __init__(self):
-    self.img_model = SentenceTransformer('./models/clip')
-    self.text_model = SentenceTransformer('./models/text')
+  def __init__(self, cuda, cuda_core):
+    device = 'cpu'
+    if cuda:
+        device=cuda_core
+    self.img_model = SentenceTransformer('./models/clip', device=device)
+    self.text_model = SentenceTransformer('./models/text', device=device)
 
   def vectorize(self, payload: ClipInput):
     try:

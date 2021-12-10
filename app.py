@@ -17,7 +17,7 @@ if cuda_env is not None and cuda_env == "true" or cuda_env == "1":
 else:
   print("[INFO] running on CPU")
 
-clip = Clip()
+clip = Clip(cuda_support, cuda_core)
 meta_config = Meta('./models/clip', './models/text')
 
 @app.get("/.well-known/live", response_class=Response)
