@@ -1,21 +1,23 @@
-from sentence_transformers import SentenceTransformer
-from pydantic import BaseModel
-from PIL import Image
-import requests
-import base64, os
-import uuid
 import io
+import base64
+from PIL import Image
+from pydantic import BaseModel
+from sentence_transformers import SentenceTransformer
+
 
 class ClipInput(BaseModel):
   texts: list = []
   images: list = []
 
+
 class ClipResult:
   textVectors: list = []
   imageVectors: list = []
+
   def __init__(self, textVectors, imageVectors):
     self.textVectors = textVectors
     self.imageVectors = imageVectors
+
 
 class Clip:
   img_model: SentenceTransformer
