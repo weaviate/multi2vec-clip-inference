@@ -30,7 +30,7 @@ def startup_event():
 		logger.info("Running on CPU")
 
 	clip = Clip(cuda_support, cuda_core)
-	meta_config = Meta('./models/clip', './models/text')
+	meta_config = Meta()
 
 
 @app.get("/.well-known/live", response_class=Response)
@@ -49,8 +49,8 @@ async def read_item(payload: ClipInput, response: Response):
 	try:
 		result = clip.vectorize(payload)
 		return {
-		"textVectors": result.textVectors,
-		"imageVectors": result.imageVectors
+			"textVectors": result.text_vectors,
+			"imageVectors": result.image_vectors
 		}
 	except Exception as e:
 		logger.exception(
