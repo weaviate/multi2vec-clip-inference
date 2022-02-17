@@ -20,6 +20,11 @@ jobs:
         TEXT_MODEL_NAME: sentence-transformers/clip-ViT-B-32-multilingual-v1
         MODEL_TAG_NAME: sentence-transformers-clip-ViT-B-32-multilingual-v1
       stage: buildanddeploy
+    - env:
+        CLIP_MODEL_NAME: openai/clip-vit-base-patch16
+        TEXT_MODEL_NAME: openai/clip-vit-base-patch16
+        MODEL_TAG_NAME: openai-clip-vit-base-patch16
+      stage: buildanddeploy
 
     - name: Build the base for custom images
       script: GIT_BRANCH=$TRAVIS_BRANCH GIT_TAG=$TRAVIS_TAG GIT_PULL_REQUEST=$TRAVIS_PULL_REQUEST cicd/build_custom_base.sh
