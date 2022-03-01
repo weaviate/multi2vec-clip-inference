@@ -89,10 +89,10 @@ class ClipInferenceOpenAI:
 	processor: CLIPProcessor
 
 	def __init__(self, cuda, cuda_core):
-		device = 'cpu'
+		self.device = 'cpu'
 		if cuda:
-			device=cuda_core
-		self.clip_model = CLIPModel.from_pretrained('./models/openai_clip').to(device)
+			self.device=cuda_core
+		self.clip_model = CLIPModel.from_pretrained('./models/openai_clip').to(self.device)
 		self.processor = CLIPProcessor.from_pretrained('./models/openai_clip_processor')
 
 	def vectorize(self, payload: ClipInput) -> ClipResult:
@@ -118,7 +118,7 @@ class ClipInferenceOpenAI:
 				text=payload.texts,
 				return_tensors="pt",
 				padding=True,
-			)
+			).to(self.device)
 
 			# Taken from the HuggingFace source code of the CLIPModel
 			text_outputs = self.clip_model.text_model(**inputs)
@@ -135,7 +135,7 @@ class ClipInferenceOpenAI:
 				images=image_files,
 				return_tensors="pt",
 				padding=True,
-			)
+			).to(self.device)
 
 			# Taken from the HuggingFace source code of the CLIPModel
 			vision_outputs = self.clip_model.vision_model(**inputs)

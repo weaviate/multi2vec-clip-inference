@@ -9,25 +9,25 @@ env:
 install: echo skipping default travis install script
 jobs:
   include:
-    # always run test, etc. for this model
-    - env:
-        CLIP_MODEL_NAME: clip-ViT-B-32
-        TEXT_MODEL_NAME: clip-ViT-B-32
-        MODEL_TAG_NAME: sentence-transformers-clip-ViT-B-32
-      stage: buildanddeploy
-    - env:
-        CLIP_MODEL_NAME: clip-ViT-B-32
-        TEXT_MODEL_NAME: sentence-transformers/clip-ViT-B-32-multilingual-v1
-        MODEL_TAG_NAME: sentence-transformers-clip-ViT-B-32-multilingual-v1
-      stage: buildanddeploy
-    - env:
-        CLIP_MODEL_NAME: openai/clip-vit-base-patch16
-        TEXT_MODEL_NAME: openai/clip-vit-base-patch16
-        MODEL_TAG_NAME: openai-clip-vit-base-patch16
-      stage: buildanddeploy
+  # always run test, etc. for this model
+  - env:
+      CLIP_MODEL_NAME: clip-ViT-B-32
+      TEXT_MODEL_NAME: clip-ViT-B-32
+      MODEL_TAG_NAME: sentence-transformers-clip-ViT-B-32
+    stage: buildanddeploy
+  - env:
+      CLIP_MODEL_NAME: clip-ViT-B-32
+      TEXT_MODEL_NAME: sentence-transformers/clip-ViT-B-32-multilingual-v1
+      MODEL_TAG_NAME: sentence-transformers-clip-ViT-B-32-multilingual-v1
+    stage: buildanddeploy
+  - env:
+      CLIP_MODEL_NAME: openai/clip-vit-base-patch16
+      TEXT_MODEL_NAME: openai/clip-vit-base-patch16
+      MODEL_TAG_NAME: openai-clip-vit-base-patch16
+    stage: buildanddeploy
 
-    - name: Build the base for custom images
-      script: GIT_BRANCH=$TRAVIS_BRANCH GIT_TAG=$TRAVIS_TAG GIT_PULL_REQUEST=$TRAVIS_PULL_REQUEST cicd/build_custom_base.sh
+  - name: Build the base for custom images
+    script: GIT_BRANCH=$TRAVIS_BRANCH GIT_TAG=$TRAVIS_TAG GIT_PULL_REQUEST=$TRAVIS_PULL_REQUEST cicd/build_custom_base.sh
       stage: postbuild
 
 script:
@@ -44,20 +44,19 @@ script:
   travis_wait 120 cicd/docker_push.sh || travis_terminate 1
 
 before_install: 
-  # install a newer docker version which supports buildx
-  - sudo rm -rf /var/lib/apt/lists/*
-  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
-  - sudo apt-get update
-  - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
-  - mkdir -vp ~/.docker/cli-plugins/
-  - curl --silent -L "https://github.com/docker/buildx/releases/download/v0.3.0/buildx-v0.3.0.linux-amd64" > ~/.docker/cli-plugins/docker-buildx
-  - chmod a+x ~/.docker/cli-plugins/docker-buildx
+# install a newer docker version which supports buildx
+- sudo rm -rf /var/lib/apt/lists/*
+- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+- sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
+- sudo apt-get update
+- sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+- mkdir -vp ~/.docker/cli-plugins/
+- curl --silent -L "https://github.com/docker/buildx/releases/download/v0.3.0/buildx-v0.3.0.linux-amd64" > ~/.docker/cli-plugins/docker-buildx
+- chmod a+x ~/.docker/cli-plugins/docker-buildx
 
 before_script:
-  # login to docker at the very beginning, so we don't run into rate-limiting
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-
+# login to docker at the very beginning, so we don't run into rate-limiting
+- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 # currently the latest available - so we can install the latest docker
 dist: bionic
