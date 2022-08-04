@@ -1,7 +1,9 @@
 # multi2vec-clip-inference
 The inference container for the clip module
 
-This is a temporary readme. TODO
+## Documentation
+
+Documentation for this module can be found [here](https://weaviate.io/developers/weaviate/current/retriever-vectorizer-modules/multi2vec-clip.html).
 
 ## Build Docker container
 
