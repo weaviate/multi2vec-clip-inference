@@ -1,9 +1,9 @@
+import json
 from os import path
 from transformers import CLIPConfig
 from transformers import AutoConfig
 
 class Meta:
-  clip_config: CLIPConfig
 
   def __init__(self):
     if path.exists('./models/openai_clip'):
@@ -12,14 +12,16 @@ class Meta:
     else:
       # Non OpenAI CLIP Models
       self._config = {
-        'clip_model':  CLIPConfig.from_pretrained('./models/clip/0_CLIPModel'),
+        'clip_model':  CLIPConfig.from_pretrained('./models/clip/0_CLIPModel').to_dict(),
       }
       try:
         # try as if it was a regular hf model
-        self._config['text_model'] = AutoConfig.from_pretrained('./models/text')
-      except (RuntimeError, TypeError, NameError, Exception, EnvironmentError) as e:
+        self._config['text_model'] = AutoConfig.from_pretrained('./models/text').to_dict()
+      except (RuntimeError, TypeError, NameError, Exception, EnvironmentError):
         # now try as if it's a ST CLIP model
-        self._config['text_model'] = AutoConfig.from_pretrained('./models/text/0_CLIPModel')
+        self._config['text_model'] = AutoConfig.from_pretrained('./models/text/0_CLIPModel').to_dict()
+    
+    self._config = json.loads(json.dumps(self._config, default=str))
 
   def get(self):
     return self._config

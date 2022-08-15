@@ -6,6 +6,8 @@ import logging
 from transformers import CLIPProcessor, CLIPModel
 from sentence_transformers import SentenceTransformer
 
+logging.basicConfig(level=logging.INFO)
+
 text_model_name = os.getenv('TEXT_MODEL_NAME')
 if text_model_name is None or text_model_name == "":
   logging.error("Fatal: TEXT_MODEL_NAME is required")
