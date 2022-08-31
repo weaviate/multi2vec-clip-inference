@@ -1,0 +1,11 @@
+name: Docker Image CI
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    # - name: Build the Docker image
+    #   run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+  - name: Build the Docker image
+    run: LOCAL_REPO="multi2vec-clip" TEXT_MODEL_NAME="sentence-transformers/clip-ViT-B-32-multilingual-v1" CLIP_MODEL_NAME="clip-ViT-B-32" ./cicd/build.sh
