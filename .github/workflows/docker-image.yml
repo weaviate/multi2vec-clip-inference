@@ -7,16 +7,40 @@ on:
     branches: [ main ]
 
 permissions:
+  id-token: write
   contents: read
+
+env:
+  LOCAL_REPO: multi2vec-clip
+  TEXT_MODEL_NAME: sentence-transformers/clip-ViT-B-32-multilingual-v1
+  CLIP_MODEL_NAME: clip-ViT-B-32
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    # - name: Build the Docker image
-    #   run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    - name: Install LightSail AWS CLI plugin
+      run: |
+        curl "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o "/usr/local/bin/lightsailctl"
+        sudo chmod +x /usr/local/bin/lightsailctl
     - name: Build the Docker image
-      run: LOCAL_REPO="multi2vec-clip" TEXT_MODEL_NAME="sentence-transformers/clip-ViT-B-32-multilingual-v1" CLIP_MODEL_NAME="clip-ViT-B-32" ./cicd/build.sh
+      run: ./cicd/build.sh
     - name: Run http tests
-      run: LOCAL_REPO="multi2vec-clip" ./cicd/test.sh
+      run: ./cicd/test.sh
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-2
+    - name: Push new version to LightSail
+      run: aws lightsail push-container-image --region eu-west-2 --service-name container-service-1 --label multi2vec-clip --image multi2vec-clip:latest
+
+# - name: Build the Docker image
+#   run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+
+# https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-managing-access-for-an-iam-user
+
+# sentence-transformers-clip-vit-b-32-multilingual-v1
+# semitechnologies/multi2vec-clip:sentence-transformers-clip-ViT-B-32-multilingual-v1
