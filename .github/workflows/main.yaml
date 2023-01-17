@@ -1,0 +1,82 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '**'
+    paths-ignore:
+      - README.md
+      - LICENSE
+  pull_request:
+
+jobs:
+  build-image:
+    name: Build image
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - clip_model_name: clip-ViT-B-32
+            text_model_name: clip-ViT-B-32
+            model_tag_name: sentence-transformers-clip-ViT-B-32
+          - clip_model_name: clip-ViT-B-32
+            text_model_name: sentence-transformers/clip-ViT-B-32-multilingual-v1
+            model_tag_name: sentence-transformers-clip-ViT-B-32-multilingual-v1
+          - clip_model_name: openai/clip-vit-base-patch16
+            text_model_name: openai/clip-vit-base-patch16
+            model_tag_name: openai-clip-vit-base-patch16
+    env:
+      LOCAL_REPO: multi2vec-clip
+      REMOTE_REPO: semitechnologies/multi2vec-clip
+      CLIP_MODEL_NAME: ${{matrix.clip_model_name}}
+      TEXT_MODEL_NAME: ${{matrix.text_model_name}}
+      MODEL_TAG_NAME: ${{matrix.model_tag_name}}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Login to Docker Hub
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_PASSWORD}}
+      - name: Build and test
+        run: |
+          cicd/build.sh || exit 1
+          cicd/test.sh || exit 1
+      - name: Deploy
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        env:
+          DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+        run: |
+          export GIT_TAG=${GITHUB_REF##*/}
+          cicd/docker_push.sh || exit 1
+  build-custom-image:
+    name: Build custom image
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-latest
+    env:
+      LOCAL_REPO: multi2vec-clip
+      REMOTE_REPO: semitechnologies/multi2vec-clip
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_PASSWORD}}
+      - name: Deploy
+        env:
+          DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+        run: |
+          export GIT_TAG=${GITHUB_REF##*/}
+          cicd/build_custom_base.sh || exit 1
