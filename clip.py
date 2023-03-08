@@ -7,6 +7,9 @@ from PIL import Image
 from pydantic import BaseModel
 from transformers import CLIPProcessor, CLIPModel
 from sentence_transformers import SentenceTransformer
+import open_clip
+import torch
+import json
 
 
 class ClipInput(BaseModel):
@@ -153,14 +156,82 @@ class ClipInferenceOpenAI:
 		)
 
 
+class ClipInferenceOpenCLIP:
+	clip_model: open_clip.CLIP | open_clip.CoCa | open_clip.CustomTextCLIP
+
+	def __init__(self, cuda, cuda_core):
+		self.device = 'cpu'
+		if cuda:
+			self.device=cuda_core
+
+		config = {}
+		cache_dir = './models/openclip'
+		with open(path.join(cache_dir, "config.json")) as user_file:
+			config = json.load(user_file)
+
+		model_name = config['model_name']
+		pretrained = config['pretrained']
+
+		model, _, preprocess = open_clip.create_model_and_transforms(model_name, pretrained=pretrained, cache_dir=cache_dir)
+		self.clip_model = model
+		self.preprocess = preprocess
+		self.tokenizer = open_clip.get_tokenizer(model_name)
+
+	def vectorize(self, payload: ClipInput) -> ClipResult:
+		"""
+		Vectorize data from Weaviate.
+
+		Parameters
+		----------
+		payload : ClipInput
+			Input to the Clip model.
+
+		Returns
+		-------
+		ClipResult
+			The result of the model for both images and text.
+		"""
+
+		text_vectors = []
+		if payload.texts:
+			with torch.no_grad(), torch.cuda.amp.autocast():
+				text = self.tokenizer(payload.texts)
+				text_features = self.clip_model.encode_text(text).to(self.device)
+				text_features /= text_features.norm(dim=-1, keepdim=True)
+			text_vectors = text_features.tolist()
+
+		image_vectors = []
+		if payload.images:
+			image_files = [self.preprocess_image(image) for image in payload.images]
+			image_vectors = [self.vectorize_image(image) for image in image_files]
+
+		return ClipResult(
+			text_vectors=text_vectors,
+			image_vectors=image_vectors,
+		)
+
+	def preprocess_image(self, base64_encoded_image_string):
+		image_bytes = base64.b64decode(base64_encoded_image_string)
+		img = Image.open(io.BytesIO(image_bytes))
+		return self.preprocess(img).unsqueeze(0)
+
+	def vectorize_image(self, image):
+		with torch.no_grad(), torch.cuda.amp.autocast():
+			image_features = self.clip_model.encode_image(image).to(self.device)
+			image_features /= image_features.norm(dim=-1, keepdim=True)
+		return image_features.tolist()[0]
+
+
 class Clip:
 
-	clip: Union[ClipInferenceOpenAI, ClipInferenceSentenceTransformers]
+	clip: Union[ClipInferenceOpenAI, ClipInferenceSentenceTransformers, ClipInferenceOpenCLIP]
 
 	def __init__(self, cuda, cuda_core):
 
 		if path.exists('./models/openai_clip'):
 			self.clip = ClipInferenceOpenAI(cuda, cuda_core)
+		elif path.exists('./models/openclip'):
+			self.clip = ClipInferenceOpenCLIP(cuda, cuda_core)
 		else:
 			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core)
 
@@ -178,7 +249,7 @@ class Clip:
 		ClipResult
 			The result of the model for both images and text.
 		"""
-	  	
+
 		return self.clip.vectorize(payload=payload)
 
 

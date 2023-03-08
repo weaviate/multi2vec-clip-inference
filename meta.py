@@ -9,6 +9,12 @@ class Meta:
     if path.exists('./models/openai_clip'):
       # OpenAI CLIP Models
       self._config = CLIPConfig.from_pretrained('./models/openai_clip').to_dict()
+    elif path.exists('./models/openclip'):
+      # OpenCLIP Models
+      config = {}
+      with open(path.join('./models/openclip', "config.json")) as config_file:
+        config = json.load(config_file)
+      self._config = config
     else:
       # Non OpenAI CLIP Models
       self._config = {
