@@ -164,7 +164,6 @@ class ClipInferenceOpenCLIP:
 		if cuda:
 			self.device=cuda_core
 
-		config = {}
 		cache_dir = './models/openclip'
 		with open(path.join(cache_dir, "config.json")) as user_file:
 			config = json.load(user_file)

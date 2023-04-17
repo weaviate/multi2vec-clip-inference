@@ -15,13 +15,11 @@ open_clip_pretrained = os.getenv('OPEN_CLIP_PRETRAINED')
 
 if open_clip_model_name != "" and open_clip_pretrained != "":
   def check_model_and_pretrained(model_name: str, pretrained: str):
-    for pair in open_clip.list_pretrained():
-      if pair[0] == model_name and pair[1] == pretrained:
+    if (model_name, pretrained) in open_clip.list_pretrained():
         return
-
     logging.error("Fatal: Available pairs are:")
     for pair in open_clip.list_pretrained():
-      logging.error(f"Fatal: model: {pair[0]} pretrained: {pair[1]}")
+        logging.error(f"Fatal: model: {pair[0]} pretrained: {pair[1]}")
     logging.error(f"Fatal: Match not found for OPEN_CLIP model {model_name} with pretrained {pretrained} pair")
     sys.exit(1)
 
