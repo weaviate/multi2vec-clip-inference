@@ -27,9 +27,15 @@ jobs:
           - clip_model_name: openai/clip-vit-base-patch16
             text_model_name: openai/clip-vit-base-patch16
             model_tag_name: openai-clip-vit-base-patch16
+          - open_clip_model_name: ViT-B-16
+            open_clip_pretrained: laion2b_s34b_b88k
+            model_tag_name: ViT-B-16-laion2b_s34b_b88k
           - open_clip_model_name: ViT-B-32-quickgelu
             open_clip_pretrained: laion400m_e32
             model_tag_name: ViT-B-32-quickgelu-laion400m_e32
+          - open_clip_model_name: xlm-roberta-base-ViT-B-32
+            open_clip_pretrained: laion5b_s13b_b90k
+            model_tag_name: xlm-roberta-base-ViT-B-32-laion5b_s13b_b90k
     env:
       LOCAL_REPO: multi2vec-clip
       REMOTE_REPO: semitechnologies/multi2vec-clip
