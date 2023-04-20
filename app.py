@@ -35,12 +35,12 @@ def startup_event():
 
 @app.get("/.well-known/live", response_class=Response)
 @app.get("/.well-known/ready", response_class=Response)
-def live_and_ready(response: Response):
+async def live_and_ready(response: Response):
 	response.status_code = status.HTTP_204_NO_CONTENT
 
 
 @app.get("/meta")
-def meta():
+async def meta():
 	return meta_config.get()
 
 
