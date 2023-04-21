@@ -47,7 +47,7 @@ async def meta():
 @app.post("/vectorize")
 async def read_item(payload: ClipInput, response: Response):
 	try:
-		result = clip.vectorize(payload)
+		result = await clip.vectorize(payload)
 		return {
 			"textVectors": result.text_vectors,
 			"imageVectors": result.image_vectors

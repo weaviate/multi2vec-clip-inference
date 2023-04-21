@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 open_clip_model_name = os.getenv('OPEN_CLIP_MODEL_NAME')
 open_clip_pretrained = os.getenv('OPEN_CLIP_PRETRAINED')
 
-if open_clip_model_name != "" and open_clip_pretrained != "":
+if open_clip_model_name is not None and open_clip_model_name != "" and open_clip_pretrained is not None and open_clip_pretrained != "":
   def check_model_and_pretrained(model_name: str, pretrained: str):
     if (model_name, pretrained) in open_clip.list_pretrained():
         return

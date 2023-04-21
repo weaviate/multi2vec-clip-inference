@@ -10,6 +10,8 @@ from sentence_transformers import SentenceTransformer
 import open_clip
 import torch
 import json
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 
 class ClipInput(BaseModel):
@@ -224,8 +226,10 @@ class ClipInferenceOpenCLIP:
 class Clip:
 
 	clip: Union[ClipInferenceOpenAI, ClipInferenceSentenceTransformers, ClipInferenceOpenCLIP]
+	executor: ThreadPoolExecutor
 
 	def __init__(self, cuda, cuda_core):
+		self.executor = ThreadPoolExecutor()
 
 		if path.exists('./models/openai_clip'):
 			self.clip = ClipInferenceOpenAI(cuda, cuda_core)
@@ -234,7 +238,7 @@ class Clip:
 		else:
 			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core)
 
-	def vectorize(self, payload: ClipInput):
+	async def vectorize(self, payload: ClipInput):
 		"""
 		Vectorize data from Weaviate.
 
@@ -249,7 +253,7 @@ class Clip:
 			The result of the model for both images and text.
 		"""
 
-		return self.clip.vectorize(payload=payload)
+		return await asyncio.wrap_future(self.executor.submit(self.clip.vectorize, payload))
 
 
 # _parse_image decodes the base64 and parses the image bytes into a
