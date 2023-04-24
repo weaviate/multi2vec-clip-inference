@@ -41,7 +41,7 @@ async def live_and_ready(response: Response):
 
 @app.get("/meta")
 async def meta():
-	return meta_config.get()
+	return await meta_config.get()
 
 
 @app.post("/vectorize")

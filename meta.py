@@ -27,5 +27,5 @@ class Meta:
     
     self._config = json.loads(json.dumps(self._config, default=str))
 
-  def get(self):
+  async def get(self):
     return self._config
