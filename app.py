@@ -35,19 +35,19 @@ def startup_event():
 
 @app.get("/.well-known/live", response_class=Response)
 @app.get("/.well-known/ready", response_class=Response)
-def live_and_ready(response: Response):
+async def live_and_ready(response: Response):
 	response.status_code = status.HTTP_204_NO_CONTENT
 
 
 @app.get("/meta")
-def meta():
-	return meta_config.get()
+async def meta():
+	return await meta_config.get()
 
 
 @app.post("/vectorize")
 async def read_item(payload: ClipInput, response: Response):
 	try:
-		result = clip.vectorize(payload)
+		result = await clip.vectorize(payload)
 		return {
 			"textVectors": result.text_vectors,
 			"imageVectors": result.image_vectors
