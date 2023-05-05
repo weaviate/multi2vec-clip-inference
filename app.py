@@ -1,18 +1,19 @@
 import os
 from logging import getLogger
 from fastapi import FastAPI, Response, status
+from contextlib import asynccontextmanager
 from clip import Clip, ClipInput
 from meta import Meta
 
 
-app = FastAPI()
+
 clip : Clip
 meta_config : Meta
 logger = getLogger('uvicorn')
 
 
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
 	global clip
 	global meta_config
 
@@ -31,7 +32,10 @@ def startup_event():
 
 	clip = Clip(cuda_support, cuda_core)
 	meta_config = Meta()
+	logger.info("Model initialization complete")
+	yield
 
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/.well-known/live", response_class=Response)
 @app.get("/.well-known/ready", response_class=Response)
