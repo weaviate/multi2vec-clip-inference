@@ -57,7 +57,7 @@ function push_tag() {
     echo "Tag & Push $tag, $tag_latest, $tag_git"
     docker tag "custom-base" "$tag" && docker push "$tag"
 
-    docker buildx build -f custom.Dockerfile \
+    docker buildx build --platform=linux/arm64,linux/amd64 -f custom.Dockerfile \
       --tag "$tag" \
       --tag "$tag_latest" \
       --tag "$tag_git" \
