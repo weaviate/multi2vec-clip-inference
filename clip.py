@@ -12,6 +12,7 @@ import torch
 import json
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 
 
 class ClipInput(BaseModel):
@@ -41,8 +42,10 @@ class ClipInferenceABS(ABC):
 class ClipInferenceSentenceTransformers(ClipInferenceABS):
 	img_model: SentenceTransformer
 	text_model: SentenceTransformer
+	lock: Lock
 
 	def __init__(self, cuda, cuda_core):
+		self.lock = Lock()
 		device = 'cpu'
 		if cuda:
 			device = cuda_core
@@ -65,23 +68,26 @@ class ClipInferenceSentenceTransformers(ClipInferenceABS):
 			The result of the model for both images and text.
 		"""
 
-		image_files = [_parse_image(image) for image in payload.images]
-
 		text_vectors = []
 		if payload.texts:
+			self.lock.acquire()
 			text_vectors = (
 				self.text_model
 				.encode(payload.texts, convert_to_tensor=True)
 				.tolist()
 			)
+			self.lock.release()
 		
 		image_vectors = []
 		if payload.images:
+			self.lock.acquire()
+			image_files = [_parse_image(image) for image in payload.images]
 			image_vectors = (
 				self.img_model
 				.encode(image_files, convert_to_tensor=True)
 				.tolist()
 			)
+			self.lock.release()
 
 		return ClipResult(
 			text_vectors=text_vectors,
@@ -92,8 +98,10 @@ class ClipInferenceSentenceTransformers(ClipInferenceABS):
 class ClipInferenceOpenAI:
 	clip_model: CLIPModel
 	processor: CLIPProcessor
+	lock: Lock
 
 	def __init__(self, cuda, cuda_core):
+		self.lock = Lock()
 		self.device = 'cpu'
 		if cuda:
 			self.device=cuda_core
@@ -115,10 +123,9 @@ class ClipInferenceOpenAI:
 			The result of the model for both images and text.
 		"""
 
-		image_files = [_parse_image(image) for image in payload.images]
-
 		text_vectors = []
 		if payload.texts:
+			self.lock.acquire()
 			inputs = self.processor(
 				text=payload.texts,
 				return_tensors="pt",
@@ -133,9 +140,13 @@ class ClipInferenceOpenAI:
 			# normalized features
 			text_embeds = text_embeds / text_embeds.norm(dim=-1, keepdim=True)
 			text_vectors = text_embeds.tolist()
+			self.lock.release()
+
 
 		image_vectors = []
 		if payload.images:
+			self.lock.acquire()
+			image_files = [_parse_image(image) for image in payload.images]
 			inputs = self.processor(
 				images=image_files,
 				return_tensors="pt",
@@ -151,6 +162,7 @@ class ClipInferenceOpenAI:
 			# normalized features
 			image_embeds = image_embeds / image_embeds.norm(dim=-1, keepdim=True)
 			image_vectors = image_embeds.tolist()
+			self.lock.release()
 
 		return ClipResult(
 			text_vectors=text_vectors,
@@ -160,8 +172,10 @@ class ClipInferenceOpenAI:
 
 class ClipInferenceOpenCLIP:
 	clip_model: open_clip.CLIP | open_clip.CoCa | open_clip.CustomTextCLIP
+	lock: Lock
 
 	def __init__(self, cuda, cuda_core):
+		self.lock = Lock()
 		self.device = 'cpu'
 		if cuda:
 			self.device=cuda_core
@@ -195,16 +209,20 @@ class ClipInferenceOpenCLIP:
 
 		text_vectors = []
 		if payload.texts:
+			self.lock.acquire()
 			with torch.no_grad(), torch.cuda.amp.autocast():
 				text = self.tokenizer(payload.texts)
 				text_features = self.clip_model.encode_text(text).to(self.device)
 				text_features /= text_features.norm(dim=-1, keepdim=True)
 			text_vectors = text_features.tolist()
+			self.lock.release()
 
 		image_vectors = []
 		if payload.images:
+			self.lock.acquire()
 			image_files = [self.preprocess_image(image) for image in payload.images]
 			image_vectors = [self.vectorize_image(image) for image in image_files]
+			self.lock.release()
 
 		return ClipResult(
 			text_vectors=text_vectors,
@@ -220,6 +238,7 @@ class ClipInferenceOpenCLIP:
 		with torch.no_grad(), torch.cuda.amp.autocast():
 			image_features = self.clip_model.encode_image(image).to(self.device)
 			image_features /= image_features.norm(dim=-1, keepdim=True)
+
 		return image_features.tolist()[0]
 
 
