@@ -171,7 +171,6 @@ class ClipInferenceOpenAI:
 
 
 class ClipInferenceOpenCLIP:
-	clip_model: open_clip.CLIP | open_clip.CoCa | open_clip.CustomTextCLIP
 	lock: Lock
 
 	def __init__(self, cuda, cuda_core):
@@ -187,7 +186,10 @@ class ClipInferenceOpenCLIP:
 		model_name = config['model_name']
 		pretrained = config['pretrained']
 
-		model, _, preprocess = open_clip.create_model_and_transforms(model_name, pretrained=pretrained, cache_dir=cache_dir)
+		model, _, preprocess = open_clip.create_model_and_transforms(model_name, pretrained=pretrained, cache_dir=cache_dir, device=self.device)
+		if cuda:
+			model = model.to(device=self.device)
+
 		self.clip_model = model
 		self.preprocess = preprocess
 		self.tokenizer = open_clip.get_tokenizer(model_name)
@@ -211,7 +213,7 @@ class ClipInferenceOpenCLIP:
 		if payload.texts:
 			self.lock.acquire()
 			with torch.no_grad(), torch.cuda.amp.autocast():
-				text = self.tokenizer(payload.texts)
+				text = self.tokenizer(payload.texts).to(self.device)
 				text_features = self.clip_model.encode_text(text).to(self.device)
 				text_features /= text_features.norm(dim=-1, keepdim=True)
 			text_vectors = text_features.tolist()
@@ -232,7 +234,7 @@ class ClipInferenceOpenCLIP:
 	def preprocess_image(self, base64_encoded_image_string):
 		image_bytes = base64.b64decode(base64_encoded_image_string)
 		img = Image.open(io.BytesIO(image_bytes))
-		return self.preprocess(img).unsqueeze(0)
+		return self.preprocess(img).unsqueeze(0).to(device=self.device)
 
 	def vectorize_image(self, image):
 		with torch.no_grad(), torch.cuda.amp.autocast():
