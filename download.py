@@ -44,6 +44,8 @@ if open_clip_model_name is not None and open_clip_model_name != "" and open_clip
   logging.info(f"Successfully downloaded and validated model and pretrained")
   sys.exit(0)
 
+clip_model_type = os.getenv('CLIP_MODEL_TYPE', 'sentencetransformer')
+
 text_model_name = os.getenv('TEXT_MODEL_NAME')
 if text_model_name is None or text_model_name == "":
   logging.error("Fatal: TEXT_MODEL_NAME is required")
@@ -54,7 +56,7 @@ if clip_model_name is None or clip_model_name == "":
   logging.error("Fatal: CLIP_MODEL_NAME is required")
   sys.exit(1)
 
-if clip_model_name.startswith('openai/'):
+if clip_model_name.startswith('openai/') or clip_model_type.lower() == "openai":
   if clip_model_name != text_model_name:
     logging.error(
       "For OpenAI models the 'CLIP_MODEL_NAME' and 'TEXT_MODEL_NAME' must be the same!"
