@@ -70,24 +70,28 @@ class ClipInferenceSentenceTransformers(ClipInferenceABS):
 
 		text_vectors = []
 		if payload.texts:
-			self.lock.acquire()
-			text_vectors = (
-				self.text_model
-				.encode(payload.texts, convert_to_tensor=True)
-				.tolist()
-			)
-			self.lock.release()
+			try:
+				self.lock.acquire()
+				text_vectors = (
+					self.text_model
+					.encode(payload.texts, convert_to_tensor=True)
+					.tolist()
+				)
+			finally:
+				self.lock.release()
 		
 		image_vectors = []
 		if payload.images:
-			self.lock.acquire()
-			image_files = [_parse_image(image) for image in payload.images]
-			image_vectors = (
-				self.img_model
-				.encode(image_files, convert_to_tensor=True)
-				.tolist()
-			)
-			self.lock.release()
+			try:
+				self.lock.acquire()
+				image_files = [_parse_image(image) for image in payload.images]
+				image_vectors = (
+					self.img_model
+					.encode(image_files, convert_to_tensor=True)
+					.tolist()
+				)
+			finally:
+				self.lock.release()
 
 		return ClipResult(
 			text_vectors=text_vectors,
@@ -125,44 +129,47 @@ class ClipInferenceOpenAI:
 
 		text_vectors = []
 		if payload.texts:
-			self.lock.acquire()
-			inputs = self.processor(
-				text=payload.texts,
-				return_tensors="pt",
-				padding=True,
-			).to(self.device)
+			try:
+				self.lock.acquire()
+				inputs = self.processor(
+					text=payload.texts,
+					return_tensors="pt",
+					padding=True,
+				).to(self.device)
 
-			# Taken from the HuggingFace source code of the CLIPModel
-			text_outputs = self.clip_model.text_model(**inputs)
-			text_embeds = text_outputs[1]
-			text_embeds = self.clip_model.text_projection(text_embeds)
+				# Taken from the HuggingFace source code of the CLIPModel
+				text_outputs = self.clip_model.text_model(**inputs)
+				text_embeds = text_outputs[1]
+				text_embeds = self.clip_model.text_projection(text_embeds)
 
-			# normalized features
-			text_embeds = text_embeds / text_embeds.norm(dim=-1, keepdim=True)
-			text_vectors = text_embeds.tolist()
-			self.lock.release()
+				# normalized features
+				text_embeds = text_embeds / text_embeds.norm(dim=-1, keepdim=True)
+				text_vectors = text_embeds.tolist()
+			finally:
+				self.lock.release()
 
 
 		image_vectors = []
 		if payload.images:
-			self.lock.acquire()
-			image_files = [_parse_image(image) for image in payload.images]
-			inputs = self.processor(
-				images=image_files,
-				return_tensors="pt",
-				padding=True,
-			).to(self.device)
+			try:
+				self.lock.acquire()
+				image_files = [_parse_image(image) for image in payload.images]
+				inputs = self.processor(
+					images=image_files,
+					return_tensors="pt",
+					padding=True,
+				).to(self.device)
 
-			# Taken from the HuggingFace source code of the CLIPModel
-			vision_outputs = self.clip_model.vision_model(**inputs)
-			image_embeds = vision_outputs[1]
-			image_embeds = self.clip_model.visual_projection(image_embeds)
+				# Taken from the HuggingFace source code of the CLIPModel
+				vision_outputs = self.clip_model.vision_model(**inputs)
+				image_embeds = vision_outputs[1]
+				image_embeds = self.clip_model.visual_projection(image_embeds)
 
-
-			# normalized features
-			image_embeds = image_embeds / image_embeds.norm(dim=-1, keepdim=True)
-			image_vectors = image_embeds.tolist()
-			self.lock.release()
+				# normalized features
+				image_embeds = image_embeds / image_embeds.norm(dim=-1, keepdim=True)
+				image_vectors = image_embeds.tolist()
+			finally:
+				self.lock.release()
 
 		return ClipResult(
 			text_vectors=text_vectors,
@@ -211,20 +218,24 @@ class ClipInferenceOpenCLIP:
 
 		text_vectors = []
 		if payload.texts:
-			self.lock.acquire()
-			with torch.no_grad(), torch.cuda.amp.autocast():
-				text = self.tokenizer(payload.texts).to(self.device)
-				text_features = self.clip_model.encode_text(text).to(self.device)
-				text_features /= text_features.norm(dim=-1, keepdim=True)
-			text_vectors = text_features.tolist()
-			self.lock.release()
+			try:
+				self.lock.acquire()
+				with torch.no_grad(), torch.cuda.amp.autocast():
+					text = self.tokenizer(payload.texts).to(self.device)
+					text_features = self.clip_model.encode_text(text).to(self.device)
+					text_features /= text_features.norm(dim=-1, keepdim=True)
+				text_vectors = text_features.tolist()
+			finally:
+				self.lock.release()
 
 		image_vectors = []
 		if payload.images:
-			self.lock.acquire()
-			image_files = [self.preprocess_image(image) for image in payload.images]
-			image_vectors = [self.vectorize_image(image) for image in image_files]
-			self.lock.release()
+			try:
+				self.lock.acquire()
+				image_files = [self.preprocess_image(image) for image in payload.images]
+				image_vectors = [self.vectorize_image(image) for image in image_files]
+			finally:
+				self.lock.release()
 
 		return ClipResult(
 			text_vectors=text_vectors,
