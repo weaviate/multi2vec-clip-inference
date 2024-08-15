@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 from PIL import Image
 from pydantic import BaseModel
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel, BertTokenizer, BertModel
 from sentence_transformers import SentenceTransformer
 import open_clip
 import torch
@@ -13,6 +13,9 @@ import json
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
+import numpy as np
+from ct_clip import CTCLIP
+from transformer_maskgit import CTViT
 
 
 class ClipInput(BaseModel):
@@ -254,6 +257,150 @@ class ClipInferenceOpenCLIP:
 
 		return image_features.tolist()[0]
 
+class CTClip:
+	lock: Lock
+
+	def __init__(self, cuda, cuda_core):
+		self.lock = Lock()
+		self.device = 'cpu'
+		if cuda:
+			self.device=cuda_core
+
+		tokenizer = BertTokenizer.from_pretrained( 'microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True )
+
+		text_encoder = BertModel.from_pretrained( "microsoft/BiomedVLP-CXR-BERT-specialized" )
+		text_encoder.resize_token_embeddings( len( tokenizer ) )
+
+		image_encoder = CTViT(
+			dim = 512,
+			codebook_size = 8192,
+			image_size = 480,
+			patch_size = 30,
+			temporal_patch_size = 15,
+			spatial_depth = 4,
+			temporal_depth = 4,
+			dim_head = 32,
+			heads = 8
+		)
+
+		model = CTCLIP(
+			image_encoder = image_encoder,
+			text_encoder = text_encoder,
+			dim_image = 2097152,
+			dim_text = 768,
+			dim_latent = 512,
+			extra_latent_projection = False,		 # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+			use_mlm=False,
+			downsample_image_embeds = False,
+			use_all_token_embeds = False
+
+		)
+
+		model.load("./models/CT_CLIP.pt")
+		if cuda:
+			model = model.to(device=self.device)
+
+		self.clip_model = model
+		self.tokenizer = tokenizer 
+
+	def preprocess( self, img_data ):
+		img_data= np.transpose(img_data, (1, 2, 0)) 
+		img_data = img_data*1000 
+		hu_min, hu_max = -1000, 200 
+		img_data = np.clip(img_data, hu_min, hu_max) 
+ 
+		img_data = (((img_data+400 ) / 600)).astype(np.float32) 
+		slices=[] 
+ 
+		tensor = torch.tensor(img_data) 
+		# Get the dimensions of the input tensor 
+		target_shape = (480,480,240) 
+		# Extract dimensions 
+		h, w, d = tensor.shape 
+ 
+		# Calculate cropping/padding values for height, width, and depth 
+		dh, dw, dd = target_shape 
+		h_start = max((h - dh) // 2, 0) 
+		h_end = min(h_start + dh, h) 
+		w_start = max((w - dw) // 2, 0) 
+		w_end = min(w_start + dw, w) 
+		d_start = max((d - dd) // 2, 0) 
+		d_end = min(d_start + dd, d) 
+ 
+		# Crop or pad the tensor 
+		tensor = tensor[h_start:h_end, w_start:w_end, d_start:d_end] 
+ 
+		pad_h_before = (dh - tensor.size(0)) // 2 
+		pad_h_after = dh - tensor.size(0) - pad_h_before 
+ 
+		pad_w_before = (dw - tensor.size(1)) // 2 
+		pad_w_after = dw - tensor.size(1) - pad_w_before 
+ 
+		pad_d_before = (dd - tensor.size(2)) // 2 
+		pad_d_after = dd - tensor.size(2) - pad_d_before 
+ 
+		tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=-1) 
+ 
+ 
+		tensor = tensor.permute(2, 0, 1) 
+
+		tensor = tensor.unsqueeze( 0 )
+
+		return tensor
+
+	def vectorize(self, payload: ClipInput) -> ClipResult:
+		"""
+		Vectorize data from Weaviate.
+
+		Parameters
+		----------
+		payload : ClipInput
+			Input to the Clip model.
+
+		Returns
+		-------
+		ClipResult
+			The result of the model for both images and text.
+		"""
+
+		while len( payload.images ) < len( payload.texts ):
+			payload.images.append( None )
+		while len( payload.texts ) < len( payload.texts ):
+			payload.texts.append( "" )
+
+		text_vectors = []
+		image_vectors = []
+		try:
+			self.lock.acquire()
+			for batch in zip( payload.texts, payload.images ):
+				with torch.no_grad(), torch.cuda.amp.autocast():
+					text = batch[ 0 ].replace('"', '')
+					text = text.replace('\'', '')
+					text = text.replace('(', '')
+					text = text.replace(')', '')
+					text = self.tokenizer( text, return_tensors="pt", padding="max_length", truncation=True, max_length=512 ).to( self.device )
+					image = self.preprocess_image( batch[ 1 ] )
+					print( image.shape )
+
+					out = self.clip_model( text, image, return_latents = True, device=self.device )
+
+				text_vectors.append( out[ 0 ] )
+				image_vectors.append( out[ 1 ] )
+		finally:
+			self.lock.release()
+
+		return ClipResult(
+			text_vectors=text_vectors,
+			image_vectors=image_vectors,
+		)
+
+	def preprocess_image(self, base64_encoded_image_string):
+		if base64_encoded_image_string:
+			image_bytes = base64.b64decode(base64_encoded_image_string)
+			img = np.load(io.BytesIO(image_bytes))
+		else:
+			img = np.zeros( ( 480, 480, 240 ) )
+		return self.preprocess( img ).unsqueeze(0).to(device=self.device)
 
 class Clip:
 
@@ -267,6 +414,8 @@ class Clip:
 			self.clip = ClipInferenceOpenAI(cuda, cuda_core)
 		elif path.exists('./models/openclip'):
 			self.clip = ClipInferenceOpenCLIP(cuda, cuda_core)
+		elif path.exists( "./models/CT_CLIP.pt" ):
+			self.clip = CTClip( cuda, cuda_core )
 		else:
 			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core)
 

@@ -1,3 +1,6 @@
+# To get CT-CLIP Model
+Go to the CTRATE dataset on huggingface to download the model and place it at `./models` under the name `CT_CLIP.pt`
+
 # multi2vec-clip-inference
 The inference container for the clip module
 
