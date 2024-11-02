@@ -6,10 +6,11 @@ remote_repo=${REMOTE_REPO?Variable REMOTE_REPO is required}
 model_tag_name=${MODEL_TAG_NAME?Variable MODEL_TAG_NAME is required}
 docker_username=${DOCKER_USERNAME?Variable DOCKER_USERNAME is required}
 docker_password=${DOCKER_PASSWORD?Variable DOCKER_PASSWORD is required}
-clip_model_name=${CLIP_MODEL_NAME}
-text_model_name=${TEXT_MODEL_NAME}
-open_clip_model_name=${OPEN_CLIP_MODEL_NAME}
-open_clip_pretrained=${OPEN_CLIP_PRETRAINED}
+clip_model_name=${CLIP_MODEL_NAME:-""}
+text_model_name=${TEXT_MODEL_NAME:-""}
+open_clip_model_name=${OPEN_CLIP_MODEL_NAME:-""}
+open_clip_pretrained=${OPEN_CLIP_PRETRAINED:-""}
+siglip_model_name=${SIGLIP_MODEL_NAME:-""}
 git_tag=$GITHUB_REF_NAME
 
 function main() {
@@ -38,6 +39,7 @@ function push_tag() {
       --build-arg "CLIP_MODEL_NAME=$clip_model_name" \
       --build-arg "OPEN_CLIP_MODEL_NAME=$open_clip_model_name" \
       --build-arg "OPEN_CLIP_PRETRAINED=$open_clip_pretrained" \
+      --build-arg "SIGLIP_MODEL_NAME=$siglip_model_name" \
       --push \
       --tag "$tag_git" \
       --tag "$tag_latest" \
