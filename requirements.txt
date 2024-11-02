@@ -1,7 +1,7 @@
-transformers==4.30.2
-fastapi==0.100.0
-uvicorn==0.22.0
-nltk==3.8.1
-torch==2.0.1
-sentence-transformers==2.2.2
-open-clip-torch==2.20.0
+transformers==4.46.1
+fastapi==0.115.4
+uvicorn==0.32.0
+nltk==3.9.1
+torch==2.5.1
+sentence-transformers==3.2.1
+open-clip-torch==2.29.0
