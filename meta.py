@@ -16,7 +16,7 @@ class Meta:
     else:
       # Non OpenAI CLIP Models
       self._config = {
-        'clip_model':  CLIPConfig.from_pretrained('./models/clip/0_CLIPModel').to_dict(),
+        'clip_model':  CLIPConfig.from_pretrained('./models').to_dict(),
       }
       try:
         # try as if it was a regular hf model
