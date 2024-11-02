@@ -5,12 +5,13 @@ from abc import ABC, abstractmethod
 from typing import Union
 from PIL import Image
 from pydantic import BaseModel
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel, SiglipModel, AutoTokenizer, AutoProcessor
 from sentence_transformers import SentenceTransformer
 import open_clip
 import torch
 import json
 import asyncio
+import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
@@ -255,6 +256,59 @@ class ClipInferenceOpenCLIP:
 		return image_features.tolist()[0]
 
 
+class ClipInferenceSigCLIP:
+	lock: Lock
+
+	def __init__(self, cuda, cuda_core):
+		self.lock = Lock()
+		self.device = 'cpu'
+		if cuda:
+			self.device=cuda_core
+
+		model_name = ''
+		cache_dir = './models/siglip'
+		with open(path.join(cache_dir, "config.json")) as user_file:
+			config = json.load(user_file)
+			model_name = config['_name_or_path']
+
+		self.model: SiglipModel = SiglipModel.from_pretrained(cache_dir)
+		self.tokenizer = AutoTokenizer.from_pretrained(cache_dir)
+		self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=cache_dir)
+
+	def vectorize(self, payload: ClipInput) -> ClipResult:
+		"""
+		Vectorize data from Weaviate.
+
+		Parameters
+		----------
+		payload : ClipInput
+			Input to the Clip model.
+
+		Returns
+		-------
+		ClipResult
+			The result of the model for both images and text.
+		"""
+
+		text_vectors = []
+		if payload.texts:
+			with self.lock, torch.no_grad():
+				input_ids = self.tokenizer(payload.texts, return_tensors="pt", truncation=True, padding=True).to(self.device)
+				text_vectors = self.model.get_text_features(**input_ids).to(self.device).tolist()
+
+		image_vectors = []
+		if payload.images:
+			with self.lock, torch.no_grad():
+				image_files = [_parse_image(image) for image in payload.images]
+				inputs = self.processor(images=image_files, return_tensors="pt").to(self.device)
+				image_vectors = self.model.get_image_features(**inputs).to(self.device).tolist()
+
+		return ClipResult(
+			text_vectors=text_vectors,
+			image_vectors=image_vectors,
+		)
+
+
 class Clip:
 
 	clip: Union[ClipInferenceOpenAI, ClipInferenceSentenceTransformers, ClipInferenceOpenCLIP]
@@ -267,6 +321,8 @@ class Clip:
 			self.clip = ClipInferenceOpenAI(cuda, cuda_core)
 		elif path.exists('./models/openclip'):
 			self.clip = ClipInferenceOpenCLIP(cuda, cuda_core)
+		elif path.exists('./models/siglip'):
+			self.clip = ClipInferenceSigCLIP(cuda, cuda_core)
 		else:
 			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core)
 

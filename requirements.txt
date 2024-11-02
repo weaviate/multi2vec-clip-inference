@@ -1,7 +1,9 @@
 transformers==4.46.1
+transformers[sentencepiece]==4.46.1
 fastapi==0.115.4
 uvicorn==0.32.0
 nltk==3.9.1
 torch==2.5.1
 sentence-transformers==3.2.1
 open-clip-torch==2.29.0
+sentencepiece==0.2.0

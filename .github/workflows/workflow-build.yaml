@@ -26,6 +26,8 @@ jobs:
           - open_clip_model_name: xlm-roberta-base-ViT-B-32
             open_clip_pretrained: laion5b_s13b_b90k
             model_tag_name: xlm-roberta-base-ViT-B-32-laion5b_s13b_b90k
+          - siglip_model_name: google/siglip-base-patch16-256-multilingual
+            model_tag_name: google-siglip-base-patch16-256-multilingual
     env:
       LOCAL_REPO: multi2vec-clip
       REMOTE_REPO: semitechnologies/multi2vec-clip
@@ -34,6 +36,7 @@ jobs:
       OPEN_CLIP_MODEL_NAME: ${{matrix.open_clip_model_name}}
       OPEN_CLIP_PRETRAINED: ${{matrix.open_clip_pretrained}}
       MODEL_TAG_NAME: ${{matrix.model_tag_name}}
+      SIGLIP_MODEL_NAME: ${{matrix.siglip_model_name}}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4

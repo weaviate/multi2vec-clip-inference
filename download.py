@@ -3,12 +3,24 @@
 import os
 import sys
 import logging
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel, SiglipModel, AutoTokenizer, AutoProcessor
 from sentence_transformers import SentenceTransformer
 import open_clip
 import json
 
 logging.basicConfig(level=logging.INFO)
+
+siglip_model_name = os.getenv('SIGLIP_MODEL_NAME')
+if siglip_model_name is not None and siglip_model_name != "":
+  cache_dir = "./models/siglip" 
+  logging.info(f"Downloading siglip model {siglip_model_name}")
+  model: SiglipModel = SiglipModel.from_pretrained(siglip_model_name)
+  model.save_pretrained(save_directory=cache_dir)
+  tokenizer = AutoTokenizer.from_pretrained(siglip_model_name)
+  tokenizer.save_pretrained(save_directory=cache_dir)
+  AutoProcessor.from_pretrained(siglip_model_name, cache_dir=cache_dir)
+  sys.exit(0)
+
 
 open_clip_model_name = os.getenv('OPEN_CLIP_MODEL_NAME')
 open_clip_pretrained = os.getenv('OPEN_CLIP_PRETRAINED')

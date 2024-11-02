@@ -13,6 +13,10 @@ class Meta:
       # OpenCLIP Models
       with open(path.join('./models/openclip', "config.json")) as config_file:
         self._config = json.load(config_file)
+    elif path.exists('./models/siglip'):
+      # SigLip Models
+      with open(path.join('./models/siglip', "config.json")) as config_file:
+        self._config = json.load(config_file)
     else:
       # Non OpenAI CLIP Models
       self._config = {
