@@ -3,7 +3,7 @@ The inference container for the clip module
 
 ## Documentation
 
-Documentation for this module can be found [here](https://weaviate.io/developers/weaviate/current/retriever-vectorizer-modules/multi2vec-clip.html).
+Documentation for this module can be found [here](https://weaviate.io/developers/weaviate/model-providers/transformers/embeddings-multimodal).
 
 ## Build Docker container
 
