@@ -8,6 +8,7 @@ docker_username=${DOCKER_USERNAME?Variable DOCKER_USERNAME is required}
 docker_password=${DOCKER_PASSWORD?Variable DOCKER_PASSWORD is required}
 clip_model_name=${CLIP_MODEL_NAME:-""}
 text_model_name=${TEXT_MODEL_NAME:-""}
+clip_model_type=${CLIP_MODEL_TYPE:-""}
 open_clip_model_name=${OPEN_CLIP_MODEL_NAME:-""}
 open_clip_pretrained=${OPEN_CLIP_PRETRAINED:-""}
 siglip_model_name=${SIGLIP_MODEL_NAME:-""}
@@ -37,6 +38,7 @@ function push_tag() {
     docker buildx build --platform=linux/arm64,linux/amd64 \
       --build-arg "TEXT_MODEL_NAME=$text_model_name" \
       --build-arg "CLIP_MODEL_NAME=$clip_model_name" \
+      --build-arg "CLIP_MODEL_TYPE=$clip_model_type" \
       --build-arg "OPEN_CLIP_MODEL_NAME=$open_clip_model_name" \
       --build-arg "OPEN_CLIP_PRETRAINED=$open_clip_pretrained" \
       --build-arg "SIGLIP_MODEL_NAME=$siglip_model_name" \
