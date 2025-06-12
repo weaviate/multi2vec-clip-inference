@@ -17,6 +17,15 @@ async def lifespan(app: FastAPI):
 	global clip
 	global meta_config
 
+	def get_trust_remote_code() -> bool:
+		if os.path.exists(f"./models/trust_remote_code"):
+			with open(f"./models/trust_remote_code", "r") as f:
+				trust_remote_code = f.read()
+				return trust_remote_code == "true"
+		return os.getenv("TRUST_REMOTE_CODE", False)
+
+	trust_remote_code = get_trust_remote_code()
+
 	cuda_env = os.getenv("ENABLE_CUDA")
 	cuda_support=False
 	cuda_core=""
@@ -30,7 +39,7 @@ async def lifespan(app: FastAPI):
 	else:
 		logger.info("Running on CPU")
 
-	clip = Clip(cuda_support, cuda_core)
+	clip = Clip(cuda_support, cuda_core, trust_remote_code)
 	meta_config = Meta()
 	logger.info("Model initialization complete")
 	yield
