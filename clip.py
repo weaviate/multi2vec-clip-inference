@@ -45,14 +45,14 @@ class ClipInferenceSentenceTransformers(ClipInferenceABS):
 	text_model: SentenceTransformer
 	lock: Lock
 
-	def __init__(self, cuda, cuda_core):
+	def __init__(self, cuda, cuda_core, trust_remote_code: bool):
 		self.lock = Lock()
 		device = 'cpu'
 		if cuda:
 			device = cuda_core
 
-		self.img_model = SentenceTransformer('./models/clip', device=device)
-		self.text_model = SentenceTransformer('./models/text', device=device)
+		self.img_model = SentenceTransformer('./models/clip', device=device, trust_remote_code=trust_remote_code)
+		self.text_model = SentenceTransformer('./models/text', device=device, trust_remote_code=trust_remote_code)
 
 	def vectorize(self, payload: ClipInput) -> ClipResult:
 		"""
@@ -259,7 +259,7 @@ class ClipInferenceOpenCLIP:
 class ClipInferenceSigCLIP:
 	lock: Lock
 
-	def __init__(self, cuda, cuda_core):
+	def __init__(self, cuda, cuda_core, trust_remote_code: bool):
 		self.lock = Lock()
 		self.device = 'cpu'
 		if cuda:
@@ -272,8 +272,8 @@ class ClipInferenceSigCLIP:
 			model_name = config['_name_or_path']
 
 		self.model: SiglipModel = SiglipModel.from_pretrained(cache_dir)
-		self.tokenizer = AutoTokenizer.from_pretrained(cache_dir)
-		self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=cache_dir)
+		self.tokenizer = AutoTokenizer.from_pretrained(cache_dir, trust_remote_code=trust_remote_code)
+		self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=cache_dir, trust_remote_code=trust_remote_code)
 
 	def vectorize(self, payload: ClipInput) -> ClipResult:
 		"""
@@ -314,7 +314,7 @@ class Clip:
 	clip: Union[ClipInferenceOpenAI, ClipInferenceSentenceTransformers, ClipInferenceOpenCLIP]
 	executor: ThreadPoolExecutor
 
-	def __init__(self, cuda, cuda_core):
+	def __init__(self, cuda, cuda_core, trust_remote_code: bool):
 		self.executor = ThreadPoolExecutor()
 
 		if path.exists('./models/openai_clip'):
@@ -322,9 +322,9 @@ class Clip:
 		elif path.exists('./models/openclip'):
 			self.clip = ClipInferenceOpenCLIP(cuda, cuda_core)
 		elif path.exists('./models/siglip'):
-			self.clip = ClipInferenceSigCLIP(cuda, cuda_core)
+			self.clip = ClipInferenceSigCLIP(cuda, cuda_core, trust_remote_code)
 		else:
-			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core)
+			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core, trust_remote_code)
 
 	async def vectorize(self, payload: ClipInput):
 		"""

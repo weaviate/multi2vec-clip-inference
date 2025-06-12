@@ -10,15 +10,24 @@ import json
 
 logging.basicConfig(level=logging.INFO)
 
+def save_trust_remote_code(trust_remote_code: bool):
+  if not os.path.exists("./models"):
+    os.makedirs("./models")
+  with open(f"./models/trust_remote_code", "w") as f:
+    f.write(f"{trust_remote_code}")
+
+trust_remote_code = os.getenv("TRUST_REMOTE_CODE", False)
+save_trust_remote_code(trust_remote_code)
+
 siglip_model_name = os.getenv('SIGLIP_MODEL_NAME')
 if siglip_model_name is not None and siglip_model_name != "":
   cache_dir = "./models/siglip" 
   logging.info(f"Downloading siglip model {siglip_model_name}")
   model: SiglipModel = SiglipModel.from_pretrained(siglip_model_name)
   model.save_pretrained(save_directory=cache_dir)
-  tokenizer = AutoTokenizer.from_pretrained(siglip_model_name)
+  tokenizer = AutoTokenizer.from_pretrained(siglip_model_name, trust_remote_code=trust_remote_code)
   tokenizer.save_pretrained(save_directory=cache_dir)
-  AutoProcessor.from_pretrained(siglip_model_name, cache_dir=cache_dir)
+  AutoProcessor.from_pretrained(siglip_model_name, cache_dir=cache_dir, trust_remote_code=trust_remote_code)
   sys.exit(0)
 
 
@@ -84,9 +93,9 @@ if clip_model_name.startswith('openai/') or clip_model_type.lower() == "openai":
 
 else:
   logging.info("Downloading text model {} from huggingface model hub".format(text_model_name))
-  text_model = SentenceTransformer(text_model_name)
+  text_model = SentenceTransformer(text_model_name, trust_remote_code=trust_remote_code)
   text_model.save('./models/text')
 
   logging.info("Downloading img model {} from huggingface model hub".format(clip_model_name))
-  clip_model = SentenceTransformer(clip_model_name)
+  clip_model = SentenceTransformer(clip_model_name, trust_remote_code=trust_remote_code)
   clip_model.save('./models/clip')
