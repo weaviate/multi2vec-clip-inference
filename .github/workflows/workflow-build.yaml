@@ -26,8 +26,12 @@ jobs:
           - open_clip_model_name: xlm-roberta-base-ViT-B-32
             open_clip_pretrained: laion5b_s13b_b90k
             model_tag_name: xlm-roberta-base-ViT-B-32-laion5b_s13b_b90k
-          - siglip_model_name: google/siglip-base-patch16-256-multilingual
-            model_tag_name: google-siglip-base-patch16-256-multilingual
+          - siglip_model_name: google/siglip-so400m-patch16-256-i18n
+            model_tag_name: google-siglip-so400m-patch16-256-i18n
+          - siglip_model_name: google/siglip2-so400m-patch16-384
+            model_tag_name: google-siglip2-so400m-patch16-384
+          - siglip_model_name: google/siglip2-so400m-patch16-512
+            model_tag_name: google-siglip2-so400m-patch16-512
     env:
       LOCAL_REPO: multi2vec-clip
       REMOTE_REPO: semitechnologies/multi2vec-clip
