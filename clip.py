@@ -265,15 +265,13 @@ class ClipInferenceSigCLIP:
 		if cuda:
 			self.device=cuda_core
 
-		model_name = ''
 		cache_dir = './models/siglip'
-		with open(path.join(cache_dir, "config.json")) as user_file:
-			config = json.load(user_file)
-			model_name = config['_name_or_path']
+		with open('./models/model_name', 'r') as f:
+			model_name = f.read()
+			self.model_name = model_name
 
 		self.model: SiglipModel = SiglipModel.from_pretrained(cache_dir)
-		self.tokenizer = AutoTokenizer.from_pretrained(cache_dir, trust_remote_code=trust_remote_code)
-		self.processor = AutoProcessor.from_pretrained(model_name, cache_dir=cache_dir, trust_remote_code=trust_remote_code)
+		self.processor = AutoProcessor.from_pretrained(self.model_name, cache_dir=cache_dir, trust_remote_code=trust_remote_code)
 
 	def vectorize(self, payload: ClipInput) -> ClipResult:
 		"""
@@ -293,15 +291,16 @@ class ClipInferenceSigCLIP:
 		text_vectors = []
 		if payload.texts:
 			with self.lock, torch.no_grad():
-				input_ids = self.tokenizer(payload.texts, return_tensors="pt", truncation=True, padding=True).to(self.device)
-				text_vectors = self.model.get_text_features(**input_ids).to(self.device).tolist()
+				inputs = self.processor(text=payload.texts, return_tensors="pt", padding=True, truncation=True).to(self.device)
+				text_vectors = self.model.get_text_features(**inputs).to(self.device).tolist()
 
 		image_vectors = []
 		if payload.images:
 			with self.lock, torch.no_grad():
 				image_files = [_parse_image(image) for image in payload.images]
-				inputs = self.processor(images=image_files, return_tensors="pt").to(self.device)
-				image_vectors = self.model.get_image_features(**inputs).to(self.device).tolist()
+				for img in image_files:
+					inputs = self.processor(images=[img], return_tensors="pt").to(self.device)
+					image_vectors.append(self.model.get_image_features(**inputs).to(self.device).tolist())
 
 		return ClipResult(
 			text_vectors=text_vectors,

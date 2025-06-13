@@ -25,9 +25,9 @@ if siglip_model_name is not None and siglip_model_name != "":
   logging.info(f"Downloading siglip model {siglip_model_name}")
   model: SiglipModel = SiglipModel.from_pretrained(siglip_model_name)
   model.save_pretrained(save_directory=cache_dir)
-  tokenizer = AutoTokenizer.from_pretrained(siglip_model_name, trust_remote_code=trust_remote_code)
-  tokenizer.save_pretrained(save_directory=cache_dir)
   AutoProcessor.from_pretrained(siglip_model_name, cache_dir=cache_dir, trust_remote_code=trust_remote_code)
+  with open(f"./models/model_name", "w") as f:
+    f.write(f"{siglip_model_name}")
   sys.exit(0)
 
 

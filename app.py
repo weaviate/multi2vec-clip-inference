@@ -18,8 +18,8 @@ async def lifespan(app: FastAPI):
 	global meta_config
 
 	def get_trust_remote_code() -> bool:
-		if os.path.exists(f"./models/trust_remote_code"):
-			with open(f"./models/trust_remote_code", "r") as f:
+		if os.path.exists("./models/trust_remote_code"):
+			with open("./models/trust_remote_code", "r") as f:
 				trust_remote_code = f.read()
 				return trust_remote_code == "true"
 		return os.getenv("TRUST_REMOTE_CODE", False)
