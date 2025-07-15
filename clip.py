@@ -300,7 +300,7 @@ class ClipInferenceSigCLIP:
 				image_files = [_parse_image(image) for image in payload.images]
 				for img in image_files:
 					inputs = self.processor(images=[img], return_tensors="pt").to(self.device)
-					image_vectors.append(self.model.get_image_features(**inputs).to(self.device).tolist())
+					image_vectors.append(self.model.get_image_features(**inputs).to(self.device).tolist()[0])
 
 		return ClipResult(
 			text_vectors=text_vectors,
