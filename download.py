@@ -77,7 +77,7 @@ if clip_model_name is None or clip_model_name == "":
   logging.error("Fatal: CLIP_MODEL_NAME is required")
   sys.exit(1)
 
-if clip_model_name.startswith('openai/') or clip_model_type.lower() == "openai":
+if clip_model_name.startswith('openai/') or clip_model_type.lower() == "openai" or clip_model_name.startswith('facebook/metaclip'):
   if clip_model_name != text_model_name:
     logging.error(
       "For OpenAI models the 'CLIP_MODEL_NAME' and 'TEXT_MODEL_NAME' must be the same!"

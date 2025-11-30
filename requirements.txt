@@ -1,8 +1,8 @@
-transformers==4.52.4
-transformers[sentencepiece]==4.52.4
-fastapi==0.115.12
-uvicorn==0.34.3
-nltk==3.9.1
+transformers==4.57.3
+transformers[sentencepiece]==4.57.3
+fastapi==0.122.1
+uvicorn==0.38.0
+nltk==3.9.2
 torch==2.6.0
 sentence-transformers==3.2.1
 open-clip-torch==2.29.0

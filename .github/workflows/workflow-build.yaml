@@ -32,6 +32,9 @@ jobs:
             model_tag_name: google-siglip2-so400m-patch16-384
           - siglip_model_name: google/siglip2-so400m-patch16-512
             model_tag_name: google-siglip2-so400m-patch16-512
+          - clip_model_name: facebook/metaclip-2-worldwide-b32-384
+            text_model_name: facebook/metaclip-2-worldwide-b32-384
+            model_tag_name: facebook-metaclip-2-worldwide-b32-384
     env:
       LOCAL_REPO: multi2vec-clip
       REMOTE_REPO: semitechnologies/multi2vec-clip
