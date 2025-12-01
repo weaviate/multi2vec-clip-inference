@@ -12,6 +12,7 @@ clip_model_type=${CLIP_MODEL_TYPE:-""}
 open_clip_model_name=${OPEN_CLIP_MODEL_NAME:-""}
 open_clip_pretrained=${OPEN_CLIP_PRETRAINED:-""}
 siglip_model_name=${SIGLIP_MODEL_NAME:-""}
+colpali_engine_model_name=${COLPALI_ENGINE_MODEL_NAME:-""}
 git_tag=$GITHUB_REF_NAME
 
 function main() {
@@ -42,6 +43,7 @@ function push_tag() {
       --build-arg "OPEN_CLIP_MODEL_NAME=$open_clip_model_name" \
       --build-arg "OPEN_CLIP_PRETRAINED=$open_clip_pretrained" \
       --build-arg "SIGLIP_MODEL_NAME=$siglip_model_name" \
+      --build-arg "COLPALI_ENGINE_MODEL_NAME=$colpali_engine_model_name" \
       --push \
       --tag "$tag_git" \
       --tag "$tag_latest" \
