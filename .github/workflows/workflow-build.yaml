@@ -35,6 +35,8 @@ jobs:
           - clip_model_name: facebook/metaclip-2-worldwide-b32-384
             text_model_name: facebook/metaclip-2-worldwide-b32-384
             model_tag_name: facebook-metaclip-2-worldwide-b32-384
+          - colpali_engine_model_name: ModernVBERT/modernvbert-embed
+            model_tag_name: ModernVBERT-modernvbert-embed
     env:
       LOCAL_REPO: multi2vec-clip
       REMOTE_REPO: semitechnologies/multi2vec-clip
@@ -44,6 +46,7 @@ jobs:
       OPEN_CLIP_PRETRAINED: ${{matrix.open_clip_pretrained}}
       MODEL_TAG_NAME: ${{matrix.model_tag_name}}
       SIGLIP_MODEL_NAME: ${{matrix.siglip_model_name}}
+      COLPALI_ENGINE_MODEL_NAME: ${{matrix.colpali_engine_model_name}}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4

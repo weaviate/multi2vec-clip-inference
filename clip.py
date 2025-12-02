@@ -5,7 +5,8 @@ from abc import ABC, abstractmethod
 from typing import Union
 from PIL import Image
 from pydantic import BaseModel
-from transformers import CLIPProcessor, CLIPModel, SiglipModel, AutoTokenizer, AutoProcessor
+from transformers import CLIPProcessor, CLIPModel, SiglipModel, AutoProcessor
+from colpali_engine.models import BiModernVBert, BiModernVBertProcessor
 from sentence_transformers import SentenceTransformer
 import open_clip
 import torch
@@ -14,6 +15,7 @@ import asyncio
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
+from torch.nn.functional import normalize
 
 
 class ClipInput(BaseModel):
@@ -308,6 +310,79 @@ class ClipInferenceSigCLIP:
 		)
 
 
+class ClipInferenceColPaliEngine:
+	lock: Lock
+
+	def __init__(self, cuda, cuda_core):
+		self.lock = Lock()
+		self.device = 'cpu'
+		if torch.backends.mps.is_available():
+			self.device = 'mps'
+		if cuda:
+			self.device=cuda_core
+
+		with open('./models/model_name', 'r') as f:
+			model_name = f.read()
+			self.model_name = model_name
+
+		self.processor = BiModernVBertProcessor.from_pretrained(
+						self.model_name, 
+						cache_dir="./models/clip_engine_processor",
+    )
+		self.model = BiModernVBert.from_pretrained(
+						self.model_name,
+						cache_dir="./models/clip_engine_model",
+						trust_remote_code=True,
+						dtype="auto",
+						device_map="auto",
+		)
+
+	def _get_embeddings(self, outputs):
+		if isinstance(outputs, dict):
+			embeddings = outputs["embeddings"]
+		else:
+			embeddings = outputs
+		vectors = []
+		for emb in embeddings:
+			vectors.append(normalize(emb, dim=-1).to(self.device).tolist())
+		return vectors
+
+	def vectorize(self, payload: ClipInput) -> ClipResult:
+		"""
+		Vectorize data from Weaviate.
+
+		Parameters
+		----------
+		payload : ClipInput
+			Input to the Clip model.
+
+		Returns
+		-------
+		ClipResult
+			The result of the model for both images and text.
+		"""
+
+		text_vectors = []
+		if payload.texts:
+			with self.lock, torch.no_grad():
+				inputs = self.processor.process_texts(payload.texts).to(self.device)
+				outputs = self.model(**inputs).to(self.device)
+				text_vectors = self._get_embeddings(outputs)
+
+		image_vectors = []
+		if payload.images:
+			with self.lock, torch.no_grad():
+				image_files = [_parse_image(image) for image in payload.images]
+				inputs = self.processor.process_images(image_files).to(self.device)
+				outputs = self.model(**inputs).to(self.device)
+				image_vectors = self._get_embeddings(outputs)
+
+		return ClipResult(
+			text_vectors=text_vectors,
+			image_vectors=image_vectors,
+		)
+
+
 class Clip:
 
 	clip: Union[ClipInferenceOpenAI, ClipInferenceSentenceTransformers, ClipInferenceOpenCLIP]
@@ -322,6 +397,8 @@ class Clip:
 			self.clip = ClipInferenceOpenCLIP(cuda, cuda_core)
 		elif path.exists('./models/siglip'):
 			self.clip = ClipInferenceSigCLIP(cuda, cuda_core, trust_remote_code)
+		elif path.exists('./models/clip_engine_model'):
+			self.clip = ClipInferenceColPaliEngine(cuda, cuda_core)
 		else:
 			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core, trust_remote_code)
 

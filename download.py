@@ -3,8 +3,9 @@
 import os
 import sys
 import logging
-from transformers import CLIPProcessor, CLIPModel, SiglipModel, AutoTokenizer, AutoProcessor
+from transformers import CLIPProcessor, CLIPModel, SiglipModel, AutoProcessor
 from sentence_transformers import SentenceTransformer
+from colpali_engine.models import BiModernVBert, BiModernVBertProcessor
 import open_clip
 import json
 
@@ -18,6 +19,28 @@ def save_trust_remote_code(trust_remote_code: bool):
 
 trust_remote_code = os.getenv("TRUST_REMOTE_CODE", False)
 save_trust_remote_code(trust_remote_code)
+
+colpali_engine_model_name = os.getenv('COLPALI_ENGINE_MODEL_NAME')
+if colpali_engine_model_name is not None and colpali_engine_model_name != "":
+  logging.info(f"Downloading colpali engine model {colpali_engine_model_name}")
+  cache_dir_processor = './models/clip_engine_processor'
+  processor = BiModernVBertProcessor.from_pretrained(colpali_engine_model_name, cache_dir=cache_dir_processor)
+  cache_dir_model = './models/clip_engine_model'
+  model = BiModernVBert.from_pretrained(colpali_engine_model_name, cache_dir=cache_dir_model, trust_remote_code=True, dtype="auto", device_map="auto")
+
+  config = {
+    "model_name" : colpali_engine_model_name,
+    "cache_dir" : cache_dir_model,
+    "cache_dir_processor" : cache_dir_processor,
+    "model_config": model.config.to_diff_dict()
+  }
+
+  with open(os.path.join(cache_dir_model, "config.json"), 'w') as f:
+    json.dump(config, f)
+
+  with open(f"./models/model_name", "w") as f:
+    f.write(f"{colpali_engine_model_name}")
+  sys.exit(0)
 
 siglip_model_name = os.getenv('SIGLIP_MODEL_NAME')
 if siglip_model_name is not None and siglip_model_name != "":

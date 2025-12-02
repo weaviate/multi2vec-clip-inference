@@ -8,3 +8,4 @@ sentence-transformers==3.2.1
 open-clip-torch==2.29.0
 sentencepiece==0.2.0
 accelerate==1.7.0
+colpali-engine==0.3.13
