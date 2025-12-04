@@ -272,8 +272,8 @@ class ClipInferenceSigCLIP:
 			model_name = f.read()
 			self.model_name = model_name
 
-		self.model: SiglipModel = SiglipModel.from_pretrained(cache_dir)
-		self.processor = AutoProcessor.from_pretrained(self.model_name, cache_dir=cache_dir, trust_remote_code=trust_remote_code)
+		self.model: SiglipModel = SiglipModel.from_pretrained(cache_dir).to(self.device)
+		self.processor = AutoProcessor.from_pretrained(self.model_name, cache_dir=cache_dir, trust_remote_code=trust_remote_code, use_fast=True)
 
 	def vectorize(self, payload: ClipInput) -> ClipResult:
 		"""
@@ -335,7 +335,7 @@ class ClipInferenceColPaliEngine:
 						trust_remote_code=True,
 						dtype="auto",
 						device_map="auto",
-		)
+		).to(self.device)
 
 	def _get_embeddings(self, outputs):
 		if isinstance(outputs, dict):
