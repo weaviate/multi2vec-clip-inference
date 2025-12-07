@@ -1,0 +1,12 @@
+https://pypi.jetson-ai-lab.io/jp6/cu126/+f/62a/1beee9f2f1470/torch-2.8.0-cp310-cp310-linux_aarch64.whl#sha256=62a1beee9f2f147076a974d2942c90060c12771c94740830327cae705b2595fc
+transformers==4.57.3
+transformers[sentencepiece]==4.57.3
+fastapi==0.122.1
+uvicorn==0.38.0
+nltk==3.9.2
+sentence-transformers==3.2.1
+open-clip-torch==2.29.0
+sentencepiece==0.2.0
+accelerate==1.7.0
+colpali-engine==0.3.13
+numpy==1.26.4
