@@ -113,7 +113,7 @@ class ClipInferenceOpenAI:
 		if cuda:
 			self.device=cuda_core
 		self.clip_model = CLIPModel.from_pretrained('./models/openai_clip').to(self.device)
-		self.processor = CLIPProcessor.from_pretrained('./models/openai_clip_processor')
+		self.processor = CLIPProcessor.from_pretrained('./models/openai_clip_processor', use_fast=True)
 
 	def vectorize(self, payload: ClipInput) -> ClipResult:
 		"""
