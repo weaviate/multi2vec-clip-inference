@@ -327,11 +327,11 @@ class ClipInferenceColPaliEngine:
 
 		self.processor = BiModernVBertProcessor.from_pretrained(
 						self.model_name, 
-						cache_dir="./models/clip_engine_processor",
+						cache_dir="./models/colpali_engine_processor",
     )
 		self.model = BiModernVBert.from_pretrained(
 						self.model_name,
-						cache_dir="./models/clip_engine_model",
+						cache_dir="./models/colpali_engine_model",
 						trust_remote_code=True,
 						dtype="auto",
 						device_map="auto",
@@ -397,7 +397,7 @@ class Clip:
 			self.clip = ClipInferenceOpenCLIP(cuda, cuda_core)
 		elif path.exists('./models/siglip'):
 			self.clip = ClipInferenceSigCLIP(cuda, cuda_core, trust_remote_code)
-		elif path.exists('./models/clip_engine_model'):
+		elif path.exists('./models/colpali_engine_model'):
 			self.clip = ClipInferenceColPaliEngine(cuda, cuda_core)
 		else:
 			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core, trust_remote_code)

@@ -23,9 +23,9 @@ save_trust_remote_code(trust_remote_code)
 colpali_engine_model_name = os.getenv('COLPALI_ENGINE_MODEL_NAME')
 if colpali_engine_model_name is not None and colpali_engine_model_name != "":
   logging.info(f"Downloading colpali engine model {colpali_engine_model_name}")
-  cache_dir_processor = './models/clip_engine_processor'
+  cache_dir_processor = './models/colpali_engine_processor'
   processor = BiModernVBertProcessor.from_pretrained(colpali_engine_model_name, cache_dir=cache_dir_processor)
-  cache_dir_model = './models/clip_engine_model'
+  cache_dir_model = './models/colpali_engine_model'
   model = BiModernVBert.from_pretrained(colpali_engine_model_name, cache_dir=cache_dir_model, trust_remote_code=True, dtype="auto", device_map="auto")
 
   config = {
