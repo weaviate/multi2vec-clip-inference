@@ -17,9 +17,9 @@ class Meta:
       # SigLip Models
       with open(path.join('./models/siglip', "config.json")) as config_file:
         self._config = json.load(config_file)
-    elif path.exists('./models/clip_engine_model'):
-      # SigLip Models
-      with open(path.join('./models/clip_engine_model', "config.json")) as config_file:
+    elif path.exists('./models/colpali_engine_model'):
+      # ColPali Engine Models
+      with open(path.join('./models/colpali_engine_model', "config.json")) as config_file:
         self._config = json.load(config_file)
     else:
       # Non OpenAI CLIP Models
