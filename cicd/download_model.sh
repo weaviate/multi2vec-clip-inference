@@ -18,8 +18,10 @@ echo " 8) SigLIP google/siglip2-so400m-patch16-384"
 echo " 9) SigLIP google/siglip2-so400m-patch16-512"
 echo "10) MetaCLIP facebook/metaclip-2-worldwide-b32-384"
 echo "11) ModernVBERT/modernvbert-embed (ColPali engine)"
+echo "12) Qwen/Qwen3-VL-Embedding-2B"
+echo "13) Qwen/Qwen3-VL-Embedding-8B"
 echo
-read -p "Enter your choice (1-11): " choice
+read -p "Enter your choice: " choice
 
 MODEL_NAME=""
 PRETRAINED=""
@@ -36,6 +38,8 @@ case $choice in
   9)  MODEL_NAME="google/siglip2-so400m-patch16-512" ;;
   10) MODEL_NAME="facebook/metaclip-2-worldwide-b32-384" ;;
   11) MODEL_NAME="ModernVBERT/modernvbert-embed" ;;
+  12) MODEL_NAME="Qwen/Qwen3-VL-Embedding-2B" ;;
+  13) MODEL_NAME="Qwen/Qwen3-VL-Embedding-8B" ;;
   *)
     echo "Invalid choice!"
     exit 1
@@ -60,6 +64,8 @@ elif [[ $choice -eq 7 ]] || [[ $choice -eq 8 ]] || [[ $choice -eq 9 ]]; then
   SIGLIP_MODEL_NAME=$MODEL_NAME ./download.py
 elif [[ $choice -eq 11 ]]; then
   COLPALI_ENGINE_MODEL_NAME=$MODEL_NAME ./download.py
+elif [[ $choice -eq 12 ]] || [[ $choice -eq 13 ]]; then
+  QWEN_ENGINE_MODEL_NAME=$MODEL_NAME ./download.py
 fi
 
 echo

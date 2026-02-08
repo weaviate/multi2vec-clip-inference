@@ -9,4 +9,5 @@ open-clip-torch==2.29.0
 sentencepiece==0.2.0
 accelerate==1.7.0
 colpali-engine==0.3.13
+qwen-vl-utils==0.0.14
 numpy==1.26.4

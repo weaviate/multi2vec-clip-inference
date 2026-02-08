@@ -21,6 +21,9 @@ class Meta:
       # ColPali Engine Models
       with open(path.join('./models/colpali_engine_model', "config.json")) as config_file:
         self._config = json.load(config_file)
+    elif path.exists('./models/qwen3'):
+      with open(path.join('./models/qwen3', "config.json")) as config_file:
+        self._config = json.load(config_file)
     else:
       # Non OpenAI CLIP Models
       self._config = {

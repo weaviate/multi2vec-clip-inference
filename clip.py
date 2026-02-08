@@ -7,6 +7,7 @@ from PIL import Image
 from pydantic import BaseModel
 from transformers import CLIPProcessor, CLIPModel, SiglipModel, AutoProcessor
 from colpali_engine.models import BiModernVBert, BiModernVBertProcessor
+from qwen3_vl_embedding import Qwen3VLEmbedder
 from sentence_transformers import SentenceTransformer
 import open_clip
 import torch
@@ -383,6 +384,60 @@ class ClipInferenceColPaliEngine:
 		)
 
 
+class ClipInferenceQwen3:
+	lock: Lock
+
+	def __init__(self):
+		self.lock = Lock()
+		# device is automatically chosen by Qwen3
+		cache_dir = './models/qwen3'
+		with open('./models/model_name', 'r') as f:
+			model_name = f.read()
+			self.model_name = model_name
+		self.embedder = Qwen3VLEmbedder(model_name_or_path=model_name, cache_dir=cache_dir)
+
+	def _get_inputs(self, payload: ClipInput):
+		inputs = []
+		if payload.texts:
+			for txt in payload.texts:
+				inputs.append({"text": txt})
+		if payload.images:
+			for image in payload.images:
+				inputs.append({"image": _parse_image(image)})
+		return inputs
+
+	def vectorize(self, payload: ClipInput) -> ClipResult:
+		"""
+		Vectorize data from Weaviate.
+
+		Parameters
+		----------
+		payload : ClipInput
+			Input to the Clip model.
+
+		Returns
+		-------
+		ClipResult
+			The result of the model for both images and text.
+		"""
+
+		text_vectors = []
+		image_vectors = []
+		with self.lock, torch.no_grad():
+			inputs = self._get_inputs(payload)
+			embeddings = self.embedder.process(inputs)
+			for i, input in enumerate(inputs):
+				if "text" in input:
+					text_vectors.append(embeddings[i].tolist())
+				else:
+					image_vectors.append(embeddings[i].tolist())
+
+		return ClipResult(
+			text_vectors=text_vectors,
+			image_vectors=image_vectors,
+		)
+
+
 class Clip:
 
 	clip: Union[ClipInferenceOpenAI, ClipInferenceSentenceTransformers, ClipInferenceOpenCLIP]
@@ -399,6 +454,8 @@ class Clip:
 			self.clip = ClipInferenceSigCLIP(cuda, cuda_core, trust_remote_code)
 		elif path.exists('./models/colpali_engine_model'):
 			self.clip = ClipInferenceColPaliEngine(cuda, cuda_core)
+		elif path.exists('./models/qwen3'):
+			self.clip = ClipInferenceQwen3()
 		else:
 			self.clip = ClipInferenceSentenceTransformers(cuda, cuda_core, trust_remote_code)
 
