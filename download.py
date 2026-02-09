@@ -6,6 +6,7 @@ import logging
 from transformers import CLIPProcessor, CLIPModel, SiglipModel, AutoProcessor
 from sentence_transformers import SentenceTransformer
 from colpali_engine.models import BiModernVBert, BiModernVBertProcessor
+from qwen3_vl_embedding import Qwen3VLEmbedder
 import open_clip
 import json
 
@@ -19,6 +20,28 @@ def save_trust_remote_code(trust_remote_code: bool):
 
 trust_remote_code = os.getenv("TRUST_REMOTE_CODE", False)
 save_trust_remote_code(trust_remote_code)
+
+qwen_engine_model_name = os.getenv('QWEN_ENGINE_MODEL_NAME')
+if qwen_engine_model_name is not None and qwen_engine_model_name != "":
+  logging.info(f"Downloading Qwen model {qwen_engine_model_name}")
+  cache_dir_model = './models/qwen3'
+  embedder = Qwen3VLEmbedder(
+    model_name_or_path=qwen_engine_model_name,
+    cache_dir=cache_dir_model,
+  )
+
+  config = {
+    "model_name" : qwen_engine_model_name,
+    "cache_dir" : cache_dir_model,
+    "model_config": embedder.model.config.to_diff_dict()
+  }
+
+  with open(os.path.join(cache_dir_model, "config.json"), 'w') as f:
+    json.dump(config, f)
+
+  with open(f"./models/model_name", "w") as f:
+    f.write(f"{qwen_engine_model_name}")
+  sys.exit(0)
 
 colpali_engine_model_name = os.getenv('COLPALI_ENGINE_MODEL_NAME')
 if colpali_engine_model_name is not None and colpali_engine_model_name != "":
