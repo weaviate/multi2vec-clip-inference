@@ -294,7 +294,10 @@ class ClipInferenceSigCLIP:
 		text_vectors = []
 		if payload.texts:
 			with self.lock, torch.no_grad():
-				inputs = self.processor(text=payload.texts, return_tensors="pt", padding=True, truncation=True).to(self.device)
+				# Per the transformers docs, SigLIP expects padding="max_length" and SigLIP2
+				# also expects lowercased text, padded to the text model's max length (64).
+				texts = [text.lower() for text in payload.texts]
+				inputs = self.processor(text=texts, return_tensors="pt", padding="max_length", max_length=self.model.config.text_config.max_position_embeddings, truncation=True).to(self.device)
 				text_vectors = self.model.get_text_features(**inputs).to(self.device).tolist()
 
 		image_vectors = []
